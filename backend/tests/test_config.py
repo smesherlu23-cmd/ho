@@ -12,6 +12,7 @@ ENV_EXAMPLE = Path(__file__).resolve().parents[2] / ".env.example"
 # Переменные, которые читают docker compose и nginx, а не бэкенд.
 NOT_FOR_BACKEND = {
     "WHATEVER_PORT",
+    "WHATEVER_BIND_ADDRESS",
     "WHATEVER_TRUSTED_PROXY",
     "WHATEVER_BACKUP_DIR",
     "WHATEVER_BACKUP_HOUR",
