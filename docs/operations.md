@@ -27,7 +27,7 @@
 ## Установка
 
 ```bash
-git clone https://github.com/smesherlu23-cmd/whatever.git && cd whatever
+git clone https://github.com/smesherlu23-cmd/ho.git whatever && cd whatever
 cp .env.example .env
 nano .env                                   # задайте POSTGRES_PASSWORD
 docker compose up -d --build --wait
@@ -52,33 +52,22 @@ docker compose exec backend python -m app.cli create-admin admin --name "Ива�
 
 ## HTTPS
 
-Приложение само TLS не завершает: перед ним ставят прокси с сертификатом компании.
-Например, Caddy или nginx на том же сервере:
+Приложение само TLS не завершает: перед ним ставят прокси с сертификатом. Готовая
+настройка nginx на том же сервере — [ops/nginx/whatever.conf](../ops/nginx/whatever.conf):
+сертификат Let's Encrypt к ней добавляет certbot, пошагово — в [deploy-vps.md](deploy-vps.md).
+Своему прокси (Caddy, nginx с сертификатом компании) нужно то же, что в этом файле:
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name whatever.example.local;
-    ssl_certificate     /etc/ssl/whatever.crt;
-    ssl_certificate_key /etc/ssl/whatever.key;
-
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Upgrade $http_upgrade;     # для WebSocket синхронизации
-        proxy_set_header Connection "upgrade";
-        proxy_read_timeout 1h;
-    }
-}
-```
+- передавать WebSocket (`Upgrade`, `Connection`) и держать соединение не меньше часа;
+- не ограничивать размер тела запроса (`client_max_body_size 0`): размер файла проверяет
+  приложение, а nginx по умолчанию отклоняет всё больше 1 МБ;
+- передавать `Host` без изменений и добавлять `X-Forwarded-For`.
 
 И в `.env`:
 
 ```bash
 WHATEVER_COOKIE_SECURE=true                 # cookie входа только по HTTPS
 WHATEVER_TRUSTED_PROXY=172.16.0.0/12        # адрес прокси, как его видит контейнер
+WHATEVER_BIND_ADDRESS=127.0.0.1             # прокси на этом сервере: порт 8080 не открыт наружу
 ```
 
 `WHATEVER_TRUSTED_PROXY` нужен защите от подбора пароля: она считает попытки по адресу
